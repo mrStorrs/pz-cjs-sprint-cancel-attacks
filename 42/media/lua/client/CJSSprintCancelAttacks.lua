@@ -1,57 +1,74 @@
 local MOD_ID = "cjsSprintCancelAttacks"
 
-local sprintWasDown = setmetatable({}, { __mode = "k" })
-local warnedMissingAttackState = false
-
-local function warnMissingAttackState()
-    if warnedMissingAttackState then return end
-
-    warnedMissingAttackState = true
-    print("[" .. MOD_ID .. "] SwipeStatePlayer.ATTACKED is not available; sprint cancel is disabled")
-end
-
-local function getAttackCompletedParam()
-    if not SwipeStatePlayer or not SwipeStatePlayer.ATTACKED then
-        warnMissingAttackState()
-        return nil
-    end
-
-    return SwipeStatePlayer.ATTACKED
-end
+local sprintAttackBan = setmetatable({}, { __mode = "k" })
 
 local function isLocalPlayer(player)
     return player and player:isLocalPlayer() == true
 end
 
-local function isSprintPressedThisFrame(player)
-    local sprintDown = player:isSprintButtonDown() == true
-    local wasDown = sprintWasDown[player] == true
-    sprintWasDown[player] = sprintDown
-
-    return sprintDown and not wasDown
+local function isSprintDown(player)
+    return player:isSprintButtonDown() == true
 end
 
-local function isCancelableWeaponAttack(player)
-    if player:IsInMeleeAttack() ~= true then return false end
-    if player:isDoHandToHandAttack() == true then return false end
+local function applySprintAttackBan(player)
+    if not sprintAttackBan[player] then
+        sprintAttackBan[player] = {
+            wasBanned = player:isBannedAttacking() == true,
+        }
+    end
 
-    local attackedParam = getAttackCompletedParam()
-    if not attackedParam then return false end
+    player:setBannedAttacking(true)
+end
 
-    return player:get(attackedParam) == false
+local function releaseSprintAttackBan(player)
+    local state = sprintAttackBan[player]
+    if not state then return end
+
+    player:setBannedAttacking(state.wasBanned == true)
+    sprintAttackBan[player] = nil
+end
+
+local function resetActionContext(player)
+    local actionContext = player:getActionContext()
+    if not actionContext then return end
+
+    local group = actionContext:getGroup()
+    if not group then return end
+
+    local initialState = group:getInitialState()
+    if not initialState then
+        initialState = group:getDefaultState()
+    end
+
+    if initialState then
+        actionContext:setCurrentState(initialState)
+    end
 end
 
 local function cancelAttack(player)
+    player:clearHandToHandAttack()
+    resetActionContext(player)
     player:setDefaultState()
-    player:setForceSprint(true)
+    player:setIgnoreMovement(false)
+    player:setBlockMovement(false)
+    player:setPerformingAttackAnimation(false)
+    player:setPerformingShoveAnimation(false)
+    player:setPerformingStompAnimation(false)
+    player:setShoveStompAnim(false)
 end
 
 local function onPlayerUpdate(player)
     if not isLocalPlayer(player) then return end
-    if not isSprintPressedThisFrame(player) then return end
-    if not isCancelableWeaponAttack(player) then return end
 
-    cancelAttack(player)
+    if isSprintDown(player) then
+        applySprintAttackBan(player)
+
+        if player:IsInMeleeAttack() == true then
+            cancelAttack(player)
+        end
+    else
+        releaseSprintAttackBan(player)
+    end
 end
 
 Events.OnPlayerUpdate.Add(onPlayerUpdate)
