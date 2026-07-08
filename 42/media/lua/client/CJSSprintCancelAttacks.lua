@@ -28,26 +28,8 @@ local function releaseRunAttackBan(player)
     runAttackBan[player] = nil
 end
 
-local function resetActionContext(player)
-    local actionContext = player:getActionContext()
-    if not actionContext then return end
-
-    local group = actionContext:getGroup()
-    if not group then return end
-
-    local initialState = group:getInitialState()
-    if not initialState then
-        initialState = group:getDefaultState()
-    end
-
-    if initialState then
-        actionContext:setCurrentState(initialState)
-    end
-end
-
 local function cancelAttack(player)
     player:clearHandToHandAttack()
-    resetActionContext(player)
     player:setDefaultState()
     player:setIgnoreMovement(false)
     player:setBlockMovement(false)
