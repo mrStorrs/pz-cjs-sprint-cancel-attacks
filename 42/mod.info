@@ -1,6 +1,6 @@
-name=CJS Sprint Cancel Attacks
+name=CJS Run Cancel Attacks
 id=cjsSprintCancelAttacks
-description=Allows sprint input to cancel active weapon, stomp, and shove attack animations.
+description=Allows run input to cancel active weapon, stomp, and shove attack animations.
 poster=poster.png
 author=CJ Storrs
 versionMin=42.0.0

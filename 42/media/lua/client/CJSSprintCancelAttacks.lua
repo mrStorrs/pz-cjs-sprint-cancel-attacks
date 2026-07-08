@@ -1,18 +1,18 @@
 local MOD_ID = "cjsSprintCancelAttacks"
 
-local sprintAttackBan = setmetatable({}, { __mode = "k" })
+local runAttackBan = setmetatable({}, { __mode = "k" })
 
 local function isLocalPlayer(player)
     return player and player:isLocalPlayer() == true
 end
 
-local function isSprintDown(player)
-    return player:isSprintButtonDown() == true
+local function isRunDown(player)
+    return player:isRunButtonDown() == true
 end
 
-local function applySprintAttackBan(player)
-    if not sprintAttackBan[player] then
-        sprintAttackBan[player] = {
+local function applyRunAttackBan(player)
+    if not runAttackBan[player] then
+        runAttackBan[player] = {
             wasBanned = player:isBannedAttacking() == true,
         }
     end
@@ -20,12 +20,12 @@ local function applySprintAttackBan(player)
     player:setBannedAttacking(true)
 end
 
-local function releaseSprintAttackBan(player)
-    local state = sprintAttackBan[player]
+local function releaseRunAttackBan(player)
+    local state = runAttackBan[player]
     if not state then return end
 
     player:setBannedAttacking(state.wasBanned == true)
-    sprintAttackBan[player] = nil
+    runAttackBan[player] = nil
 end
 
 local function resetActionContext(player)
@@ -60,14 +60,14 @@ end
 local function onPlayerUpdate(player)
     if not isLocalPlayer(player) then return end
 
-    if isSprintDown(player) then
-        applySprintAttackBan(player)
+    if isRunDown(player) then
+        applyRunAttackBan(player)
 
         if player:IsInMeleeAttack() == true then
             cancelAttack(player)
         end
     else
-        releaseSprintAttackBan(player)
+        releaseRunAttackBan(player)
     end
 end
 
